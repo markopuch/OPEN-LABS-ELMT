@@ -11,12 +11,21 @@
       content="Horarios de laboratorios - OpenLabs ELMT"
     />
 
-    <!-- Icono de la pestaña -->
-    <link rel="icon" type="image/png" href="./asset/Logo.png?v=4" />
-    <link rel="shortcut icon" type="image/png" href="./asset/Logo.png?v=3" />
-    <link rel="apple-touch-icon" href="./asset/Logo.png?v=3" />
+    <!-- Favicons -->
+    <link rel="icon" href="./favicon.ico?v=10" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png?v=10" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png?v=10" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=10" />
 
     <style>
+      :root {
+        --page-accent: #111827;
+        --border-color: #d1d5db;
+        --muted-text: #6b7280;
+        --page-bg: #f9fafb;
+        --card-bg: #ffffff;
+      }
+
       html,
       body {
         width: 100%;
@@ -24,7 +33,7 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
-        background: #ffffff;
+        background: var(--page-bg);
       }
 
       .app-frame {
@@ -33,16 +42,180 @@
         height: 100dvh;
         border: 0;
         display: block;
+        background: #ffffff;
+      }
+
+      .access-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: var(--page-bg);
+        font-family: Arial, Helvetica, sans-serif;
+        transition: opacity 180ms ease, visibility 180ms ease;
+      }
+
+      .access-overlay.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .access-card {
+        width: min(520px, 100%);
+        padding: 32px 28px;
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        background: var(--card-bg);
+        box-shadow: 0 18px 45px rgba(17, 24, 39, 0.12);
+        text-align: center;
+      }
+
+      .access-logo {
+        width: 82px;
+        height: 82px;
+        object-fit: contain;
+        margin-bottom: 18px;
+      }
+
+      .access-card h1 {
+        margin: 0 0 10px;
+        color: var(--page-accent);
+        font-size: 24px;
+        line-height: 1.2;
+      }
+
+      .access-card p {
+        margin: 0 0 16px;
+        color: var(--muted-text);
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 20px;
+      }
+
+      .button {
+        appearance: none;
+        border: 1px solid var(--page-accent);
+        border-radius: 999px;
+        padding: 11px 16px;
+        background: var(--page-accent);
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .button.secondary {
+        background: #ffffff;
+        color: var(--page-accent);
+      }
+
+      .small-note {
+        margin-top: 18px !important;
+        margin-bottom: 0 !important;
+        font-size: 13px !important;
       }
     </style>
   </head>
 
   <body>
     <iframe
+      id="openlabsFrame"
       class="app-frame"
-      src="https://script.google.com/a/macros/utec.edu.pe/s/AKfycbx7WDZW0HvAEZ79w5z7VSRUh18phu_7eljeTzXnvofZW8Tnb1gY7zXYA9Cj8_F6m-gO/exec"
       title="OpenLabs ELMT - Horarios de laboratorios"
       allowfullscreen
     ></iframe>
+
+    <div id="accessOverlay" class="access-overlay" role="status" aria-live="polite">
+      <div class="access-card">
+        <img
+          class="access-logo"
+          src="./asset/Logo.png"
+          alt="OpenLabs ELMT"
+          onerror="this.style.display='none'"
+        />
+
+        <h1 id="noticeTitle">Cargando OpenLabs ELMT...</h1>
+
+        <p id="noticeText">
+          Estamos verificando si tu sesión UTEC está activa.
+        </p>
+
+        <div class="actions">
+          <a
+            id="loginButton"
+            class="button"
+            href="#"
+            target="_blank"
+            rel="noopener"
+          >
+            Abrir e ingresar con @utec.edu.pe
+          </a>
+
+          <button class="button secondary" type="button" onclick="window.location.reload()">
+            Recargar
+          </button>
+        </div>
+
+        <p class="small-note">
+          Si ya iniciaste sesión en otra pestaña, vuelve aquí y presiona “Recargar”.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const APP_URL =
+        "https://script.google.com/a/macros/utec.edu.pe/s/AKfycbx7WDZW0HvAEZ79w5z7VSRUh18phu_7eljeTzXnvofZW8Tnb1gY7zXYA9Cj8_F6m-gO/exec";
+
+      const ACCESS_TIMEOUT_MS = 5000;
+
+      const iframe = document.getElementById("openlabsFrame");
+      const overlay = document.getElementById("accessOverlay");
+      const noticeTitle = document.getElementById("noticeTitle");
+      const noticeText = document.getElementById("noticeText");
+      const loginButton = document.getElementById("loginButton");
+
+      iframe.src = APP_URL;
+      loginButton.href = APP_URL;
+
+      function hideAccessOverlay() {
+        overlay.classList.add("hidden");
+      }
+
+      window.addEventListener("message", function (event) {
+        const origin = event.origin || "";
+
+        const isAppsScriptOrigin =
+          origin === "https://script.google.com" ||
+          origin.endsWith(".googleusercontent.com");
+
+        if (!isAppsScriptOrigin) return;
+
+        if (event.data && event.data.type === "OPENLABS_READY") {
+          hideAccessOverlay();
+        }
+      });
+
+      window.setTimeout(function () {
+        if (!overlay.classList.contains("hidden")) {
+          overlay.setAttribute("role", "alert");
+
+          noticeTitle.textContent = "Ingresa con tu cuenta @utec.edu.pe";
+
+          noticeText.textContent =
+            "Para poder ver los horarios, primero inicia sesión en Chrome o abre la app directamente con tu correo institucional UTEC.";
+        }
+      }, ACCESS_TIMEOUT_MS);
+    </script>
   </body>
 </html>
