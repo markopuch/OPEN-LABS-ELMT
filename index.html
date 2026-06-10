@@ -15,16 +15,16 @@
     <link
       rel="icon"
       type="image/png"
-      href="/OPEN-LABS-ELMT/asset/Logo.png?v=90"
+      href="/OPEN-LABS-ELMT/asset/Logo.png?v=120"
     />
     <link
       rel="shortcut icon"
       type="image/png"
-      href="/OPEN-LABS-ELMT/asset/Logo.png?v=90"
+      href="/OPEN-LABS-ELMT/asset/Logo.png?v=120"
     />
     <link
       rel="apple-touch-icon"
-      href="/OPEN-LABS-ELMT/asset/Logo.png?v=90"
+      href="/OPEN-LABS-ELMT/asset/Logo.png?v=120"
     />
 
     <style>
@@ -53,27 +53,32 @@
         border: 0;
         display: block;
         background: #ffffff;
+
+        /* Clave: oculto desde el inicio para que no se vea la página rota de Google */
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
       }
 
-      .access-overlay {
+      .app-frame.visible {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+
+      .status-screen {
         position: fixed;
         inset: 0;
         z-index: 9999;
         display: grid;
         place-items: center;
         padding: 24px;
-        background: rgba(249, 250, 251, 0.96);
+        background: var(--page-bg);
         font-family: Arial, Helvetica, sans-serif;
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transition: opacity 180ms ease, visibility 180ms ease;
       }
 
-      .access-overlay.visible {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
+      .status-screen.hidden {
+        display: none;
       }
 
       .access-card {
@@ -120,6 +125,11 @@
         cursor: pointer;
       }
 
+      .button.hidden,
+      .small-note.hidden {
+        display: none;
+      }
+
       .small-note {
         margin-top: 18px !important;
         margin-bottom: 0 !important;
@@ -136,61 +146,74 @@
       allowfullscreen
     ></iframe>
 
-    <div
-      id="accessOverlay"
-      class="access-overlay"
-      role="alert"
-      aria-live="polite"
-    >
-      <div class="access-card">
+    <main id="statusScreen" class="status-screen" role="status" aria-live="polite">
+      <section class="access-card">
         <img
           class="access-logo"
-          src="/OPEN-LABS-ELMT/asset/Logo.png?v=90"
+          src="/OPEN-LABS-ELMT/asset/Logo.png?v=120"
           alt="OpenLabs ELMT"
           onerror="this.style.display='none'"
         />
 
-        <h1>Ingresa con tu cuenta @utec.edu.pe</h1>
+        <h1 id="statusTitle">Cargando OpenLabs ELMT...</h1>
 
-        <p>
-          Para poder ver los horarios de laboratorios, inicia sesión en Chrome
-          con tu correo institucional UTEC y luego recarga esta página.
+        <p id="statusText">
+          Estamos verificando si tu sesión UTEC está activa.
         </p>
 
         <button
-          class="button"
+          id="reloadButton"
+          class="button hidden"
           type="button"
           onclick="window.location.reload()"
         >
           Recargar página
         </button>
 
-        <p class="small-note">
-          No se abrirá otra página ni se hará redirección automática.
+        <p id="smallNote" class="small-note hidden">
+          Inicia sesión en Chrome con tu cuenta institucional y luego recarga esta página.
         </p>
-      </div>
-    </div>
+      </section>
+    </main>
 
     <script>
       const APP_URL =
         "https://script.google.com/a/macros/utec.edu.pe/s/AKfycbx7WDZW0HvAEZ79w5z7VSRUh18phu_7eljeTzXnvofZW8Tnb1gY7zXYA9Cj8_F6m-gO/exec";
 
-      const ACCESS_TIMEOUT_MS = 5000;
+      /*
+        Este tiempo NO controla si se ve la hoja rota.
+        La hoja rota ya está oculta porque el iframe inicia invisible.
+
+        Este tiempo solo decide cuándo dejar de mostrar “Cargando...”
+        y mostrar “Ingresa con tu cuenta @utec.edu.pe”.
+      */
+      const LOGIN_MESSAGE_DELAY_MS = 8000;
 
       const iframe = document.getElementById("openlabsFrame");
-      const overlay = document.getElementById("accessOverlay");
+      const statusScreen = document.getElementById("statusScreen");
+      const statusTitle = document.getElementById("statusTitle");
+      const statusText = document.getElementById("statusText");
+      const reloadButton = document.getElementById("reloadButton");
+      const smallNote = document.getElementById("smallNote");
 
       let appReady = false;
 
-      function showAccessOverlay() {
-        if (!appReady) {
-          overlay.classList.add("visible");
-        }
+      function showApp() {
+        appReady = true;
+        iframe.classList.add("visible");
+        statusScreen.classList.add("hidden");
       }
 
-      function hideAccessOverlay() {
-        appReady = true;
-        overlay.classList.remove("visible");
+      function showLoginMessage() {
+        if (appReady) return;
+
+        statusScreen.setAttribute("role", "alert");
+        statusTitle.textContent = "Ingresa con tu cuenta @utec.edu.pe";
+        statusText.textContent =
+          "Para poder ver los horarios de laboratorios, inicia sesión en Chrome con tu correo institucional UTEC y luego recarga esta página.";
+
+        reloadButton.classList.remove("hidden");
+        smallNote.classList.remove("hidden");
       }
 
       window.addEventListener("message", function (event) {
@@ -204,13 +227,13 @@
         if (!isAppsScriptOrigin) return;
 
         if (event.data && event.data.type === "OPENLABS_READY") {
-          hideAccessOverlay();
+          showApp();
         }
       });
 
       iframe.src = APP_URL;
 
-      window.setTimeout(showAccessOverlay, ACCESS_TIMEOUT_MS);
+      window.setTimeout(showLoginMessage, LOGIN_MESSAGE_DELAY_MS);
     </script>
   </body>
 </html>
