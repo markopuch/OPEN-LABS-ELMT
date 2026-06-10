@@ -15,16 +15,16 @@
     <link
       rel="icon"
       type="image/png"
-      href="/OPEN-LABS-ELMT/asset/Logo.png?v=31"
+      href="/OPEN-LABS-ELMT/asset/Logo.png?v=60"
     />
     <link
       rel="shortcut icon"
       type="image/png"
-      href="/OPEN-LABS-ELMT/asset/Logo.png?v=31"
+      href="/OPEN-LABS-ELMT/asset/Logo.png?v=60"
     />
     <link
       rel="apple-touch-icon"
-      href="/OPEN-LABS-ELMT/asset/Logo.png?v=31"
+      href="/OPEN-LABS-ELMT/asset/Logo.png?v=60"
     />
 
     <style>
@@ -53,27 +53,28 @@
         border: 0;
         display: block;
         background: #ffffff;
+        opacity: 0;
+        visibility: hidden;
       }
 
-      .access-overlay {
+      .app-frame.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .status-screen {
         position: fixed;
         inset: 0;
         z-index: 9999;
         display: grid;
         place-items: center;
         padding: 24px;
-        background: rgba(249, 250, 251, 0.96);
+        background: var(--page-bg);
         font-family: Arial, Helvetica, sans-serif;
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transition: opacity 180ms ease, visibility 180ms ease;
       }
 
-      .access-overlay.visible {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
+      .status-screen.hidden {
+        display: none;
       }
 
       .access-card {
@@ -101,25 +102,17 @@
       }
 
       .access-card p {
-        margin: 0 0 16px;
+        margin: 0 0 18px;
         color: var(--muted-text);
         font-size: 15px;
         line-height: 1.5;
-      }
-
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
-        margin-top: 20px;
       }
 
       .button {
         appearance: none;
         border: 1px solid var(--page-accent);
         border-radius: 999px;
-        padding: 11px 16px;
+        padding: 12px 18px;
         background: var(--page-accent);
         color: #ffffff;
         font-size: 14px;
@@ -128,9 +121,9 @@
         cursor: pointer;
       }
 
-      .button.secondary {
-        background: #ffffff;
-        color: var(--page-accent);
+      .button.hidden,
+      .small-note.hidden {
+        display: none;
       }
 
       .small-note {
@@ -149,69 +142,77 @@
       allowfullscreen
     ></iframe>
 
-    <div
-      id="accessOverlay"
-      class="access-overlay"
-      role="alert"
-      aria-live="polite"
-    >
-      <div class="access-card">
+    <main id="statusScreen" class="status-screen" role="status" aria-live="polite">
+      <section class="access-card">
         <img
           class="access-logo"
-          src="/OPEN-LABS-ELMT/asset/Logo.png?v=31"
+          src="/OPEN-LABS-ELMT/asset/Logo.png?v=60"
           alt="OpenLabs ELMT"
           onerror="this.style.display='none'"
         />
 
-        <h1>Ingresa con tu cuenta @utec.edu.pe</h1>
+        <h1 id="statusTitle">Cargando OpenLabs ELMT...</h1>
 
-        <p>
-          Para poder ver los horarios, primero inicia sesión con tu correo
-          institucional UTEC.
+        <p id="statusText">
+          Estamos verificando si tu sesión UTEC está activa.
         </p>
 
-        <div class="actions">
-          <button id="loginButton" class="button" type="button">
-            Ingresar con @utec.edu.pe
-          </button>
+        <button id="loginButton" class="button hidden" type="button">
+          Ingresar con @utec.edu.pe
+        </button>
 
-          <button
-            class="button secondary"
-            type="button"
-            onclick="window.location.reload()"
-          >
-            Recargar
-          </button>
-        </div>
-
-        <p class="small-note">
-          Si ya iniciaste sesión en otra pestaña, vuelve aquí y presiona
-          “Recargar”.
+        <p id="smallNote" class="small-note hidden">
+          Después de iniciar sesión, volverás automáticamente a esta página.
         </p>
-      </div>
-    </div>
+      </section>
+    </main>
 
     <script>
       const APP_URL =
         "https://script.google.com/a/macros/utec.edu.pe/s/AKfycbx7WDZW0HvAEZ79w5z7VSRUh18phu_7eljeTzXnvofZW8Tnb1gY7zXYA9Cj8_F6m-gO/exec";
 
-      const ACCESS_TIMEOUT_MS = 3000;
+      const CHECK_TIMEOUT_MS = 2500;
 
       const iframe = document.getElementById("openlabsFrame");
-      const overlay = document.getElementById("accessOverlay");
+      const statusScreen = document.getElementById("statusScreen");
+      const statusTitle = document.getElementById("statusTitle");
+      const statusText = document.getElementById("statusText");
       const loginButton = document.getElementById("loginButton");
+      const smallNote = document.getElementById("smallNote");
 
       let appReady = false;
 
-      function showAccessOverlay() {
-        if (!appReady) {
-          overlay.classList.add("visible");
-        }
+      function showApp() {
+        appReady = true;
+        iframe.classList.add("visible");
+        statusScreen.classList.add("hidden");
       }
 
-      function hideAccessOverlay() {
-        appReady = true;
-        overlay.classList.remove("visible");
+      function showLoginButton() {
+        if (appReady) return;
+
+        statusScreen.setAttribute("role", "alert");
+        statusTitle.textContent = "Ingresa con tu cuenta @utec.edu.pe";
+        statusText.textContent =
+          "Para ver los horarios de laboratorios, inicia sesión con tu correo institucional UTEC.";
+
+        loginButton.classList.remove("hidden");
+        smallNote.classList.remove("hidden");
+      }
+
+      function buildLoginUrl() {
+        const returnUrl =
+          window.location.origin + window.location.pathname + "?auth=1";
+
+        const appScriptLoginUrl = new URL(APP_URL);
+        appScriptLoginUrl.searchParams.set("login", "1");
+        appScriptLoginUrl.searchParams.set("return", returnUrl);
+
+        const googleLoginUrl = new URL("https://accounts.google.com/AccountChooser");
+        googleLoginUrl.searchParams.set("hd", "utec.edu.pe");
+        googleLoginUrl.searchParams.set("continue", appScriptLoginUrl.toString());
+
+        return googleLoginUrl.toString();
       }
 
       window.addEventListener("message", function (event) {
@@ -225,20 +226,17 @@
         if (!isAppsScriptOrigin) return;
 
         if (event.data && event.data.type === "OPENLABS_READY") {
-          hideAccessOverlay();
+          showApp();
         }
+      });
+
+      loginButton.addEventListener("click", function () {
+        window.location.assign(buildLoginUrl());
       });
 
       iframe.src = APP_URL;
 
-      window.setTimeout(showAccessOverlay, ACCESS_TIMEOUT_MS);
-
-      loginButton.addEventListener("click", function () {
-        const loginUrl = new URL(APP_URL);
-        loginUrl.searchParams.set("login", "1");
-
-        window.location.href = loginUrl.toString();
-      });
+      window.setTimeout(showLoginButton, CHECK_TIMEOUT_MS);
     </script>
   </body>
 </html>
