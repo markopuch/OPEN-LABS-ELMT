@@ -11,20 +11,39 @@
       content="Horarios de laboratorios - OpenLabs ELMT"
     />
 
-    <!-- Logo de la pestaña -->
+    <!-- Favicons: coloca estos archivos en la raíz del repositorio -->
+    <link rel="icon" href="./favicon.ico?v=300" sizes="any" />
+    <link rel="shortcut icon" href="./favicon.ico?v=300" />
     <link
       rel="icon"
       type="image/png"
-      href="/asset/Logo.png?v=120"
+      sizes="48x48"
+      href="./favicon-48x48.png?v=300"
     />
     <link
-      rel="shortcut icon"
+      rel="icon"
       type="image/png"
-      href="/asset/Logo.png?v=120"
+      sizes="32x32"
+      href="./favicon-32x32.png?v=300"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="./favicon-16x16.png?v=300"
     />
     <link
       rel="apple-touch-icon"
-      href="/asset/Logo.png?v=120"
+      sizes="180x180"
+      href="./apple-touch-icon.png?v=300"
+    />
+    <link rel="manifest" href="./site.webmanifest?v=300" />
+
+    <!-- Fallback: usa tu logo dentro de asset si el navegador no toma favicon.ico -->
+    <link
+      rel="icon"
+      type="image/png"
+      href="./asset/Logo.png?v=300"
     />
 
     <style>
@@ -34,6 +53,10 @@
         --muted-text: #6b7280;
         --page-bg: #f9fafb;
         --card-bg: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
       }
 
       html,
@@ -54,7 +77,11 @@
         display: block;
         background: #ffffff;
 
-        /* Clave: oculto desde el inicio para que no se vea la página rota de Google */
+        /*
+          Importante:
+          El iframe empieza oculto para que NO se vea la pantalla rota de Google
+          cuando el usuario no tiene sesión UTEC activa.
+        */
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
@@ -130,6 +157,10 @@
         display: none;
       }
 
+      .button:hover {
+        background: #374151;
+      }
+
       .small-note {
         margin-top: 18px !important;
         margin-bottom: 0 !important;
@@ -146,11 +177,16 @@
       allowfullscreen
     ></iframe>
 
-    <main id="statusScreen" class="status-screen" role="status" aria-live="polite">
+    <main
+      id="statusScreen"
+      class="status-screen"
+      role="status"
+      aria-live="polite"
+    >
       <section class="access-card">
         <img
           class="access-logo"
-          src="/asset/Logo.png?v=120"
+          src="./asset/Logo.png?v=300"
           alt="OpenLabs ELMT"
           onerror="this.style.display='none'"
         />
@@ -171,7 +207,8 @@
         </button>
 
         <p id="smallNote" class="small-note hidden">
-          Inicia sesión en Chrome con tu cuenta institucional y luego recarga esta página.
+          Inicia sesión en Chrome con tu cuenta institucional
+          <strong>@utec.edu.pe</strong> y luego recarga esta página.
         </p>
       </section>
     </main>
@@ -181,11 +218,13 @@
         "https://script.google.com/a/macros/utec.edu.pe/s/AKfycbx7WDZW0HvAEZ79w5z7VSRUh18phu_7eljeTzXnvofZW8Tnb1gY7zXYA9Cj8_F6m-gO/exec";
 
       /*
-        Este tiempo NO controla si se ve la hoja rota.
-        La hoja rota ya está oculta porque el iframe inicia invisible.
+        Este tiempo solo controla cuándo cambiar de:
+        "Cargando OpenLabs ELMT..."
+        a:
+        "Ingresa con tu cuenta @utec.edu.pe"
 
-        Este tiempo solo decide cuándo dejar de mostrar “Cargando...”
-        y mostrar “Ingresa con tu cuenta @utec.edu.pe”.
+        El iframe ya está oculto desde el inicio, así que la pantalla rota de Google
+        no debería verse.
       */
       const LOGIN_MESSAGE_DELAY_MS = 8000;
 
@@ -208,7 +247,9 @@
         if (appReady) return;
 
         statusScreen.setAttribute("role", "alert");
+
         statusTitle.textContent = "Ingresa con tu cuenta @utec.edu.pe";
+
         statusText.textContent =
           "Para poder ver los horarios de laboratorios, inicia sesión en Chrome con tu correo institucional UTEC y luego recarga esta página.";
 
